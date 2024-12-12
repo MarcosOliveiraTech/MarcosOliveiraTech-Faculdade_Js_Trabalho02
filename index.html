@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animação com Canvas – Marcos Oliveira – Estudante SI Anhanguera 2024</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configuração inicial
+        const circles = [];
+        const numCircles = 10;
+
+        function randomColor() {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            return { r, g, b };
+        }
+
+        function interpolateColor(color1, color2, factor) {
+            return {
+                r: Math.round(color1.r + factor * (color2.r - color1.r)),
+                g: Math.round(color1.g + factor * (color2.g - color1.g)),
+                b: Math.round(color1.b + factor * (color2.b - color1.b))
+            };
+        }
+
+        function colorToString(color) {
+            return `rgb(${color.r}, ${color.g}, ${color.b})`;
+        }
+
+        // Criação dos círculos
+        for (let i = 0; i < numCircles; i++) {
+            const initialColor = randomColor();
+            const targetColor = randomColor();
+            circles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: 20 + Math.random() * 30,
+                dx: (Math.random() - 0.5) * 4,
+                dy: (Math.random() - 0.5) * 4,
+                currentColor: initialColor,
+                targetColor: targetColor,
+                colorTransitionFactor: 0
+            });
+        }
+
+        function drawCircle(circle) {
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+            ctx.fillStyle = colorToString(circle.currentColor);
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function updateCircles() {
+            for (const circle of circles) {
+                // Atualizar posição
+                circle.x += circle.dx;
+                circle.y += circle.dy;
+
+                // Colisão com bordas
+                if (circle.x - circle.radius < 0 || circle.x + circle.radius > canvas.width) {
+                    circle.dx *= -1;
+                }
+                if (circle.y - circle.radius < 0 || circle.y + circle.radius > canvas.height) {
+                    circle.dy *= -1;
+                }
+
+                // Atualizar cor gradualmente
+                circle.colorTransitionFactor += 0.01; // Ajuste para suavidade
+                if (circle.colorTransitionFactor >= 1) {
+                    circle.currentColor = circle.targetColor;
+                    circle.targetColor = randomColor();
+                    circle.colorTransitionFactor = 0;
+                } else {
+                    circle.currentColor = interpolateColor(circle.currentColor, circle.targetColor, circle.colorTransitionFactor);
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (const circle of circles) {
+                drawCircle(circle);
+            }
+
+            updateCircles();
+            requestAnimationFrame(animate);
+        }
+
+        // Interatividade: mudar cor ao clicar
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            for (const circle of circles) {
+                const dist = Math.sqrt((mouseX - circle.x) ** 2 + (mouseY - circle.y) ** 2);
+                if (dist < circle.radius) {
+                    circle.targetColor = randomColor();
+                    circle.colorTransitionFactor = 0;
+                }
+            }
+        });
+
+        animate();
+    </script>
+</body>
+</html>
